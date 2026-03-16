@@ -16,7 +16,7 @@ import {
   exportExcel,
   JobEventStream,
 } from "@/lib/api"
-import type { MarksheetRecord, File as FileType } from "@/lib/types"
+import type { MarksheetRecord } from "@/lib/types"
 
 export default function HomePage() {
   const { toast } = useToast()

@@ -1,11 +1,16 @@
 """OpenAI client for vision-based marksheet extraction."""
 import asyncio
+import logging
 from typing import Optional, Dict, Any
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, RateLimitError, APITimeoutError, APIStatusError
 from app.config import get_settings
 from app.models import OPENAI_EXTRACTION_SCHEMA
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
+
+MAX_RETRIES = 3
+RETRY_BASE_DELAY = 2.0  # seconds
 
 
 # System prompt for CBSE marksheet extraction
@@ -109,57 +114,86 @@ class OpenAIExtractionService:
         use_fallback: bool = False
     ) -> Dict[str, Any]:
         """
-        Extract data from marksheet image.
+        Extract data from marksheet image with retry and exponential backoff.
+        Retries on rate limits (429), server errors (5xx), and timeouts.
         Returns structured data as dict.
         """
         model = self.fallback_model if use_fallback else self.primary_model
 
-        try:
-            response = await self.client.chat.completions.create(
-                model=model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": EXTRACTION_SYSTEM_PROMPT
-                    },
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": EXTRACTION_USER_PROMPT
-                            },
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": image_base64
+        for attempt in range(MAX_RETRIES):
+            try:
+                response = await self.client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": EXTRACTION_SYSTEM_PROMPT
+                        },
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": EXTRACTION_USER_PROMPT
+                                },
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": image_base64
+                                    }
                                 }
-                            }
-                        ]
-                    }
-                ],
-                response_format={
-                    "type": "json_schema",
-                    "json_schema": {
-                        "name": "marksheet_extraction",
-                        "strict": True,
-                        "schema": OPENAI_EXTRACTION_SCHEMA
-                    }
-                },
-                max_tokens=4096,
-                timeout=90.0  # Increased timeout for gpt-4o
-            )
+                            ]
+                        }
+                    ],
+                    response_format={
+                        "type": "json_schema",
+                        "json_schema": {
+                            "name": "marksheet_extraction",
+                            "strict": True,
+                            "schema": OPENAI_EXTRACTION_SCHEMA
+                        }
+                    },
+                    max_tokens=4096,
+                    timeout=90.0
+                )
 
-            content = response.choices[0].message.content
-            if content:
-                import json
-                return json.loads(content)
-            return {}
+                content = response.choices[0].message.content
+                if content:
+                    import json
+                    return json.loads(content)
+                return {}
 
-        except Exception as e:
-            # For timeout or error, return empty dict
-            print(f"OpenAI extraction error: {e}")
-            raise
+            except (RateLimitError, APITimeoutError) as e:
+                delay = RETRY_BASE_DELAY * (2 ** attempt)
+                logger.warning(
+                    "OpenAI %s on attempt %d/%d, retrying in %.1fs: %s",
+                    type(e).__name__, attempt + 1, MAX_RETRIES, delay, e
+                )
+                if attempt < MAX_RETRIES - 1:
+                    await asyncio.sleep(delay)
+                else:
+                    raise
+
+            except APIStatusError as e:
+                if e.status_code >= 500:
+                    delay = RETRY_BASE_DELAY * (2 ** attempt)
+                    logger.warning(
+                        "OpenAI server error %d on attempt %d/%d, retrying in %.1fs",
+                        e.status_code, attempt + 1, MAX_RETRIES, delay
+                    )
+                    if attempt < MAX_RETRIES - 1:
+                        await asyncio.sleep(delay)
+                    else:
+                        raise
+                else:
+                    logger.error("OpenAI client error %d: %s", e.status_code, e)
+                    raise
+
+            except Exception as e:
+                logger.error("OpenAI extraction error: %s", e)
+                raise
+
+        return {}
 
     async def extract_with_fallback(
         self,
@@ -181,7 +215,7 @@ class OpenAIExtractionService:
             result = await self.extract(image_base64, use_fallback=True)
             return result, True
         except Exception as e:
-            print(f"Fallback extraction also failed: {e}")
+            logger.error("Fallback extraction also failed: %s", e)
             return {}, True
 
     def _validate_extraction(self, data: Dict[str, Any]) -> bool:

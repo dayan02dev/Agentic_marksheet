@@ -3,6 +3,7 @@ import os
 import uuid
 import asyncio
 import json
+import logging
 from pathlib import Path
 from typing import AsyncIterator
 from contextlib import asynccontextmanager
@@ -18,6 +19,13 @@ from app.graph.batch_graph import get_batch_graph, GraphState
 from app.graph.nodes import TEMP_DIR
 
 settings = get_settings()
+
+logging.basicConfig(
+    level=getattr(logging, settings.log_level.upper(), logging.INFO),
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
 
 # Global storage for SSE connections
 _active_jobs: dict[str, asyncio.Queue] = {}
@@ -77,109 +85,6 @@ async def emit_progress(job_id: str, event_type: str, data: dict):
             "type": event_type,
             "data": data
         })
-
-
-async def process_job_task(job_id: str, files: list[UploadFile]):
-    """Background task to process a job."""
-    storage = await get_storage()
-    graph = get_batch_graph()
-
-    try:
-        # Save uploaded files
-        file_infos = []
-        for file in files:
-            file_path = TEMP_DIR / f"{job_id}_{file.filename}"
-            with open(file_path, "wb") as f:
-                content = await file.read()
-                f.write(content)
-            file_infos.append({
-                "name": file.filename,
-                "path": str(file_path)
-            })
-
-        # Create initial state
-        initial_state = GraphState(
-            job_id=job_id,
-            files=file_infos,
-            images=[],
-            extractions=[],
-            records=[],
-            errors=[],
-            current_step="ingest",
-            progress=0.0,
-            needs_interrupt=False
-        )
-
-        # Update job status
-        await storage.update_job_progress(job_id, JobStatus.processing, 0.0)
-
-        # Run graph with step-by-step progress
-        final_state = None
-        async for event in graph.astream(initial_state):
-            # Emit progress for each step
-            for node_name, node_state in event.items():
-                if isinstance(node_state, dict):
-                    progress = node_state.get("progress", 0)
-                    current_step = node_state.get("current_step", "")
-                    await emit_progress(job_id, "progress", {
-                        "step": current_step,
-                        "progress": progress
-                    })
-
-                    # Emit record completions (only when we have new records)
-                    records = node_state.get("records", [])
-                    if records:
-                        for record in records:
-                            await emit_progress(job_id, "record_complete", {
-                                "record_id": record.id,
-                                "filename": record.filename,
-                                "status": record.status
-                            })
-
-                # Update job progress in storage
-                await storage.update_job_progress(
-                    job_id,
-                    progress=node_state.get("progress", 0) if isinstance(node_state, dict) else 0
-                )
-
-                # Keep track of final state
-                final_state = node_state
-
-        # Use the final state from stream
-        if final_state is None:
-            final_state = initial_state
-
-        # Save records to storage
-        records = final_state.get("records", [])
-        for record in records:
-            await storage.add_record(job_id, record)
-
-        # Mark job as completed
-        await storage.update_job_progress(
-            job_id,
-            JobStatus.completed,
-            100.0,
-            completed_files=len(records)
-        )
-
-        await emit_progress(job_id, "complete", {
-            "job_id": job_id,
-            "total_records": len(records)
-        })
-
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        await storage.update_job_progress(job_id, JobStatus.error)
-        await emit_progress(job_id, "error", {
-            "error": str(e)
-        })
-
-    finally:
-        # Cleanup SSE queue after delay
-        await asyncio.sleep(5)
-        if job_id in _active_jobs:
-            del _active_jobs[job_id]
 
 
 # API Routes
@@ -320,8 +225,7 @@ async def process_job_task_with_data(job_id: str, file_data: list[dict]):
         })
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        logger.exception("Job %s failed", job_id)
         await storage.update_job_progress(job_id, JobStatus.error)
         await emit_progress(job_id, "error", {
             "error": str(e)

@@ -3,9 +3,9 @@ import pytest
 from app.services.normalize import (
     normalize_subject_name,
     normalize_subjects,
-    compute_overall_percent,
-    compute_pcm_percent,
-    get_pcm_subjects,
+    compute_best_five_percent,
+    compute_core_percent,
+    get_core_subjects,
     compute_review_reasons
 )
 from app.models import SubjectNormalized, SubjectStatus
@@ -25,21 +25,21 @@ class TestSubjectNormalization:
 
         for raw, expected in test_cases:
             normalized, category = normalize_subject_name(raw)
-            assert normalized == expected
+            assert normalized == expected, f"Failed for {raw}: got {normalized}"
             assert category == "ENGLISH"
 
-    def test_normalize_physics_variants(self):
-        """Test various Physics subject name variants."""
+    def test_normalize_math_variants(self):
+        """Test various Math subject name variants."""
         test_cases = [
-            ("PHYSICS", "PHYSICS"),
-            ("Physics (042)", "PHYSICS"),
-            ("Physics Theory", "PHYSICS"),
+            ("MATHEMATICS", "MATHEMATICS"),
+            ("MATHS", "MATHEMATICS"),
+            ("MATHEMATICS BASIC", "MATHEMATICS"),
         ]
 
         for raw, expected in test_cases:
             normalized, category = normalize_subject_name(raw)
-            assert normalized == expected
-            assert category == "PHYSICS"
+            assert normalized == expected, f"Failed for {raw}: got {normalized}"
+            assert category == "MATH"
 
     def test_normalize_unknown_subject(self):
         """Test unknown subject returns original name."""
@@ -57,161 +57,111 @@ class TestSubjectNormalization:
         """Test normalizing a list of subjects."""
         raw_subjects = [
             {"subject_name": "ENGLISH CORE", "obtained_marks": 85, "max_marks": 100, "status": "OK"},
-            {"subject_name": "PHYSICS (042)", "obtained_marks": 78, "max_marks": 100, "status": "OK"},
-            {"subject_name": "Chemistry", "obtained_marks": 82, "max_marks": 100, "status": "OK"},
             {"subject_name": "MATHEMATICS", "obtained_marks": 90, "max_marks": 100, "status": "OK"},
-            {"subject_name": "Computer Science", "obtained_marks": 88, "max_marks": 100, "status": "OK"},
+            {"subject_name": "SCIENCE", "obtained_marks": 82, "max_marks": 100, "status": "OK"},
+            {"subject_name": "SOCIAL SCIENCE", "obtained_marks": 78, "max_marks": 100, "status": "OK"},
+            {"subject_name": "HINDI", "obtained_marks": 88, "max_marks": 100, "status": "OK"},
         ]
 
         normalized = normalize_subjects(raw_subjects)
 
-        assert len(normalized) == 5
+        # Should pad to 6 subjects (5 main + 1 placeholder)
+        assert len(normalized) == 6
         assert normalized[0].normalized_name == "ENGLISH"
-        assert normalized[1].normalized_name == "PHYSICS"
-        assert normalized[2].normalized_name == "CHEMISTRY"
-        assert normalized[3].normalized_name == "MATHEMATICS"
+        assert normalized[1].normalized_name == "MATHEMATICS"
+        assert normalized[2].normalized_name == "SCIENCE"
+        assert normalized[3].normalized_name == "SOCIAL SCIENCE"
+        assert normalized[5].normalized_name == "EXTRA"  # placeholder
+
+    def test_normalize_subjects_ab_status(self):
+        """Test that AB status sets obtained_marks to None."""
+        raw_subjects = [
+            {"subject_name": "ENGLISH", "obtained_marks": 0, "max_marks": 100, "status": "AB"},
+        ]
+
+        normalized = normalize_subjects(raw_subjects)
+        assert normalized[0].obtained_marks is None
+        assert normalized[0].status == SubjectStatus.AB
 
 
 class TestComputations:
     """Test percentage computations."""
 
-    def test_overall_percent(self):
-        """Test overall percentage calculation."""
+    def _make_subject(self, name, category, obtained, max_marks=100, status=SubjectStatus.OK):
+        return SubjectNormalized(
+            raw_name=name, normalized_name=name, category=category,
+            obtained_marks=obtained, max_marks=max_marks, status=status
+        )
+
+    def test_best_five_percent(self):
+        """Test Best of 5 percentage calculation."""
         subjects = [
-            SubjectNormalized(
-                raw_name="English", normalized_name="ENGLISH", category="ENGLISH",
-                obtained_marks=85, max_marks=100, status=SubjectStatus.OK
-            ),
-            SubjectNormalized(
-                raw_name="Physics", normalized_name="PHYSICS", category="PHYSICS",
-                obtained_marks=78, max_marks=100, status=SubjectStatus.OK
-            ),
-            SubjectNormalized(
-                raw_name="Chemistry", normalized_name="CHEMISTRY", category="CHEMISTRY",
-                obtained_marks=82, max_marks=100, status=SubjectStatus.OK
-            ),
-            SubjectNormalized(
-                raw_name="Mathematics", normalized_name="MATHEMATICS", category="MATHEMATICS",
-                obtained_marks=90, max_marks=100, status=SubjectStatus.OK
-            ),
-            SubjectNormalized(
-                raw_name="CS", normalized_name="COMPUTER SCIENCE", category="ELECTIVE",
-                obtained_marks=88, max_marks=100, status=SubjectStatus.OK
-            ),
+            self._make_subject("ENGLISH", "ENGLISH", 85),
+            self._make_subject("MATHEMATICS", "MATH", 90),
+            self._make_subject("SCIENCE", "SCIENCE", 82),
+            self._make_subject("SOCIAL SCIENCE", "SOCIAL_SCIENCE", 78),
+            self._make_subject("HINDI", "SECOND_LANGUAGE", 88),
         ]
 
-        percent = compute_overall_percent(subjects)
-        expected = (85 + 78 + 82 + 90 + 88) / 500 * 100
-        assert percent == round(expected, 2)
-        assert percent == 84.6
-
-    def test_overall_percent_with_missing(self):
-        """Test overall percent with missing values."""
-        subjects = [
-            SubjectNormalized(
-                raw_name="English", normalized_name="ENGLISH", category="ENGLISH",
-                obtained_marks=85, max_marks=100, status=SubjectStatus.OK
-            ),
-            SubjectNormalized(
-                raw_name="Physics", normalized_name="PHYSICS", category="PHYSICS",
-                obtained_marks=None, max_marks=100, status=SubjectStatus.AB
-            ),
-        ]
-
-        percent = compute_overall_percent(subjects)
-        # Should compute based on available subjects
-        assert percent == 85.0
-
-    def test_overall_percent_all_missing(self):
-        """Test overall percent when all missing."""
-        subjects = [
-            SubjectNormalized(
-                raw_name="English", normalized_name="ENGLISH", category="ENGLISH",
-                obtained_marks=None, max_marks=None, status=SubjectStatus.AB
-            ),
-        ]
-
-        percent = compute_overall_percent(subjects)
-        assert percent is None
-
-    def test_pcm_percent(self):
-        """Test PCM percentage calculation."""
-        subjects = [
-            SubjectNormalized(
-                raw_name="English", normalized_name="ENGLISH", category="ENGLISH",
-                obtained_marks=85, max_marks=100, status=SubjectStatus.OK
-            ),
-            SubjectNormalized(
-                raw_name="Physics", normalized_name="PHYSICS", category="PHYSICS",
-                obtained_marks=80, max_marks=100, status=SubjectStatus.OK
-            ),
-            SubjectNormalized(
-                raw_name="Chemistry", normalized_name="CHEMISTRY", category="CHEMISTRY",
-                obtained_marks=70, max_marks=100, status=SubjectStatus.OK
-            ),
-            SubjectNormalized(
-                raw_name="Mathematics", normalized_name="MATHEMATICS", category="MATHEMATICS",
-                obtained_marks=90, max_marks=100, status=SubjectStatus.OK
-            ),
-            SubjectNormalized(
-                raw_name="CS", normalized_name="COMPUTER SCIENCE", category="ELECTIVE",
-                obtained_marks=88, max_marks=100, status=SubjectStatus.OK
-            ),
-        ]
-
-        percent = compute_pcm_percent(subjects)
-        expected = (80 + 70 + 90) / 3  # Average of percents
+        percent = compute_best_five_percent(subjects)
+        # English(85) + Math(90) + Science(82) are mandatory, then best 2 of remaining: Hindi(88) + SS(78)
+        expected = (85 + 90 + 82 + 88 + 78) / 500 * 100
         assert percent == round(expected, 2)
 
-    def test_pcm_percent_missing_physics(self):
-        """Test PCM percent when Physics is missing."""
+    def test_best_five_percent_insufficient_subjects(self):
+        """Test Best of 5 with fewer than 5 valid subjects."""
         subjects = [
-            SubjectNormalized(
-                raw_name="English", normalized_name="ENGLISH", category="ENGLISH",
-                obtained_marks=85, max_marks=100, status=SubjectStatus.OK
-            ),
-            SubjectNormalized(
-                raw_name="Chemistry", normalized_name="CHEMISTRY", category="CHEMISTRY",
-                obtained_marks=70, max_marks=100, status=SubjectStatus.OK
-            ),
-            SubjectNormalized(
-                raw_name="Mathematics", normalized_name="MATHEMATICS", category="MATHEMATICS",
-                obtained_marks=90, max_marks=100, status=SubjectStatus.OK
-            ),
+            self._make_subject("ENGLISH", "ENGLISH", 85),
+            self._make_subject("MATHEMATICS", "MATH", 90),
         ]
 
-        percent = compute_pcm_percent(subjects)
+        percent = compute_best_five_percent(subjects)
         assert percent is None
 
-    def test_get_pcm_subjects(self):
-        """Test extracting PCM subjects."""
+    def test_core_percent(self):
+        """Test core percentage (Eng, Math, Sci, SS)."""
         subjects = [
-            SubjectNormalized(
-                raw_name="English", normalized_name="ENGLISH", category="ENGLISH",
-                obtained_marks=85, max_marks=100, status=SubjectStatus.OK
-            ),
-            SubjectNormalized(
-                raw_name="Physics", normalized_name="PHYSICS", category="PHYSICS",
-                obtained_marks=80, max_marks=100, status=SubjectStatus.OK
-            ),
-            SubjectNormalized(
-                raw_name="Chemistry", normalized_name="CHEMISTRY", category="CHEMISTRY",
-                obtained_marks=70, max_marks=100, status=SubjectStatus.OK
-            ),
-            SubjectNormalized(
-                raw_name="Mathematics", normalized_name="MATHEMATICS", category="MATHEMATICS",
-                obtained_marks=90, max_marks=100, status=SubjectStatus.OK
-            ),
+            self._make_subject("ENGLISH", "ENGLISH", 85),
+            self._make_subject("MATHEMATICS", "MATH", 90),
+            self._make_subject("SCIENCE", "SCIENCE", 80),
+            self._make_subject("SOCIAL SCIENCE", "SOCIAL_SCIENCE", 70),
+            self._make_subject("HINDI", "SECOND_LANGUAGE", 88),
         ]
 
-        pcm = get_pcm_subjects(subjects)
+        percent = compute_core_percent(subjects)
+        expected = (85 + 90 + 80 + 70) / 4
+        assert percent == round(expected, 2)
 
-        assert pcm["physics"] is not None
-        assert pcm["chemistry"] is not None
-        assert pcm["mathematics"] is not None
-        assert pcm["physics"].obtained_marks == 80
-        assert pcm["chemistry"].obtained_marks == 70
-        assert pcm["mathematics"].obtained_marks == 90
+    def test_core_percent_missing_subject(self):
+        """Test core percent when a core subject is missing."""
+        subjects = [
+            self._make_subject("ENGLISH", "ENGLISH", 85),
+            self._make_subject("MATHEMATICS", "MATH", 90),
+            self._make_subject("HINDI", "SECOND_LANGUAGE", 88),
+        ]
+
+        percent = compute_core_percent(subjects)
+        assert percent is None
+
+    def test_get_core_subjects(self):
+        """Test extracting core subjects."""
+        subjects = [
+            self._make_subject("ENGLISH", "ENGLISH", 85),
+            self._make_subject("MATHEMATICS", "MATH", 90),
+            self._make_subject("SCIENCE", "SCIENCE", 80),
+            self._make_subject("SOCIAL SCIENCE", "SOCIAL_SCIENCE", 70),
+            self._make_subject("HINDI", "SECOND_LANGUAGE", 88),
+        ]
+
+        core = get_core_subjects(subjects)
+
+        assert core["english"] is not None
+        assert core["math"] is not None
+        assert core["science"] is not None
+        assert core["social_science"] is not None
+        assert core["second_language"] is not None
+        assert core["english"].obtained_marks == 85
+        assert core["math"].obtained_marks == 90
 
 
 class TestReviewReasons:

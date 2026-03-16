@@ -1,6 +1,7 @@
 """Storage service for job state management."""
 import json
 import asyncio
+import logging
 from typing import Optional, Dict, List
 from datetime import datetime
 import redis.asyncio as redis
@@ -8,6 +9,7 @@ from app.config import get_settings
 from app.models import Job, JobStatus, MarksheetRecord
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 class StorageService:
@@ -30,7 +32,7 @@ class StorageService:
             self._use_redis = True
         except Exception:
             self._use_redis = False
-            print("Redis unavailable, using in-memory storage")
+            logger.info("Redis unavailable, using in-memory storage")
 
     async def close(self):
         """Close storage connections."""

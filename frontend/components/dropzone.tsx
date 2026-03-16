@@ -1,9 +1,12 @@
 "use client"
 
-import React, { useCallback } from "react"
+import React, { useCallback, useState } from "react"
 import { useDropzone } from "react-dropzone"
-import { Upload, File, X } from "lucide-react"
+import { Upload, File, X, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
+
+const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB total
+const MAX_SINGLE_FILE_SIZE = 25 * 1024 * 1024 // 25MB per file
 
 interface FileWithPreview extends File {
   preview?: string
@@ -27,10 +30,32 @@ export function Dropzone({
   },
 }: DropzoneProps) {
   const [files, setFiles] = React.useState<FileWithPreview[]>([])
+  const [validationError, setValidationError] = useState<string | null>(null)
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
+      setValidationError(null)
+
+      // Validate individual file sizes
+      const oversized = acceptedFiles.filter(f => f.size > MAX_SINGLE_FILE_SIZE)
+      if (oversized.length > 0) {
+        setValidationError(
+          `${oversized.map(f => f.name).join(", ")} exceed${oversized.length === 1 ? "s" : ""} the 25MB per-file limit.`
+        )
+        return
+      }
+
       const newFiles = [...files, ...acceptedFiles].slice(0, maxFiles)
+
+      // Validate total size
+      const totalSize = newFiles.reduce((sum, f) => sum + f.size, 0)
+      if (totalSize > MAX_FILE_SIZE) {
+        setValidationError(
+          `Total upload size (${(totalSize / 1024 / 1024).toFixed(1)}MB) exceeds the 100MB limit.`
+        )
+        return
+      }
+
       setFiles(newFiles)
       onFilesSelected(newFiles)
     },
@@ -75,6 +100,13 @@ export function Dropzone({
           Max {maxFiles} files per batch
         </p>
       </div>
+
+      {validationError && (
+        <div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{validationError}</span>
+        </div>
+      )}
 
       {files.length > 0 && (
         <div className="space-y-2">

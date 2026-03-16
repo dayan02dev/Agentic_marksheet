@@ -19,7 +19,7 @@ interface EditDrawerProps {
   record: MarksheetRecord | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSave: (recordId: string, updates: Partial<MarksheetRecord>) => Promise<void>
+  onSave: (recordId: string, updates: Partial<MarksheetRecord>) => Promise<any>
   jobId: string
 }
 
@@ -101,7 +101,8 @@ export function EditDrawer({
     )
 
     if (percents.some(p => p === null)) return null
-    return (percents.reduce((sum, p) => sum + p!, 0) / percents.length).toFixed(2)
+    const validPercents = percents.filter((p): p is number => p !== null)
+    return (validPercents.reduce((sum, p) => sum + p, 0) / validPercents.length).toFixed(2)
   }
 
   return (

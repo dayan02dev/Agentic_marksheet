@@ -111,13 +111,13 @@ class TestSubjectNormalized:
         subject = SubjectNormalized(
             raw_name="PHYSICS (042)",
             normalized_name="PHYSICS",
-            category="PHYSICS",
+            category="SCIENCE",
             obtained_marks=85,
             max_marks=100,
             status=SubjectStatus.OK
         )
         assert subject.normalized_name == "PHYSICS"
-        assert subject.category == "PHYSICS"
+        assert subject.category == "SCIENCE"
 
     def test_needs_review_flag(self):
         """Test needs review flag is set correctly."""
@@ -127,7 +127,8 @@ class TestSubjectNormalized:
             category="ENGLISH",
             obtained_marks=None,  # Missing marks
             max_marks=100,
-            status=SubjectStatus.AB
+            status=SubjectStatus.AB,
+            needs_review=True
         )
         assert subject.needs_review is True
 

@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "CBSE Marksheet Processor",
-  description: "Extract and compute marks from CBSE Class 12 marksheets",
+  description: "AI-powered extraction and computation of marks from CBSE Class 12 marksheets",
 }
 
 export default function RootLayout({

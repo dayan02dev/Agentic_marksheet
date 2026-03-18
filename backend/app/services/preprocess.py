@@ -1,6 +1,7 @@
 """Image preprocessing service for OCR optimization."""
 import io
 import base64
+import logging
 from typing import Tuple, Optional
 import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter
@@ -8,6 +9,7 @@ import cv2
 from app.config import get_settings
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 def resize_image(image: Image.Image, max_dim: int = None) -> Image.Image:

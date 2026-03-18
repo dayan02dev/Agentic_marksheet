@@ -177,6 +177,10 @@ def _get_category(subject_name: str) -> str:
     if "ADDITIONAL" in subject_upper or "SIXTH" in subject_upper or "EXTRA" in subject_upper:
         return "ADDITIONAL"
 
+    # Check for commerce subjects
+    if any(x in subject_upper for x in ["ACCOUNTANCY", "ACCOUNTS", "BUSINESS"]):
+        return "ADDITIONAL"
+
     # Check for other common subjects that might be electives
     if any(x in subject_upper for x in ["COMPUTER", "INFORMATICS", "ART", "MUSIC", "PHYSICAL EDUCATION"]):
         return "ADDITIONAL"

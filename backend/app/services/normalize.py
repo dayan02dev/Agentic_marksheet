@@ -132,6 +132,7 @@ def normalize_subject_name(raw_name: Optional[str]) -> tuple[str, str]:
                 return canonical, _get_category(canonical)
 
     # No match found - try to determine category from name
+    logger.debug("No fuzzy match for subject '%s', using raw name", raw_name)
     category = _get_category(raw_name)
     return raw_name, category
 

@@ -310,12 +310,12 @@ export default function HomePage() {
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Avg Best 5 %:</span>
                     <span className="font-medium">
-                      {records
-                        .filter((r) => r.overall_percent !== null)
-                        .reduce((sum, r) => sum + (r.overall_percent || 0), 0) /
-                        records.filter((r) => r.overall_percent !== null)
-                          .length || 0}
-                      %
+                      {(() => {
+                        const valid = records.filter((r) => r.overall_percent !== null)
+                        if (valid.length === 0) return "N/A"
+                        const avg = valid.reduce((sum, r) => sum + (r.overall_percent || 0), 0) / valid.length
+                        return `${avg.toFixed(2)}%`
+                      })()}
                     </span>
                   </div>
                 </CardContent>

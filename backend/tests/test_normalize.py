@@ -83,6 +83,20 @@ class TestSubjectNormalization:
         assert normalized[0].obtained_marks is None
         assert normalized[0].status == SubjectStatus.AB
 
+    def test_normalize_science_variants(self):
+        """Test various Science subject name variants."""
+        test_cases = [
+            ("SCIENCE", "SCIENCE"),
+            ("PHYSICS", "PHYSICS"),
+            ("CHEMISTRY", "CHEMISTRY"),
+            ("BIOLOGY", "BIOLOGY"),
+        ]
+
+        for raw, expected in test_cases:
+            normalized, category = normalize_subject_name(raw)
+            assert normalized == expected, f"Failed for {raw}: got {normalized}"
+            assert category == "SCIENCE"
+
 
 class TestComputations:
     """Test percentage computations."""

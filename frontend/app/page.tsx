@@ -187,9 +187,10 @@ export default function HomePage() {
     }
   }
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     if (eventStreamRef.current) {
       eventStreamRef.current.disconnect()
+      eventStreamRef.current = null
     }
     setFiles([])
     setJobId(null)
@@ -201,7 +202,7 @@ export default function HomePage() {
     setCompletedFiles(0)
     setFailedFiles(0)
     setRecords([])
-  }
+  }, [])
 
   return (
     <main className="min-h-screen bg-background p-6">

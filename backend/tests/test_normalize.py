@@ -218,3 +218,16 @@ class TestReviewReasons:
 
         reasons = compute_review_reasons(subjects)
         assert len(reasons) == 0
+
+    def test_review_reasons_compartment_status(self):
+        """Test review reasons for compartment subject."""
+        subjects = [
+            SubjectNormalized(
+                raw_name="Mathematics", normalized_name="MATHEMATICS", category="MATH",
+                obtained_marks=None, max_marks=100, status=SubjectStatus.COMPARTMENT
+            ),
+        ]
+
+        reasons = compute_review_reasons(subjects)
+        assert len(reasons) > 0
+        assert any("COMPARTMENT" in r for r in reasons)

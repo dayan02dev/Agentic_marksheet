@@ -396,6 +396,7 @@ async def rerun_extraction(job_id: str, record_id: str):
     if record_idx is None:
         raise HTTPException(status_code=404, detail="Record not found")
 
+    logger.info("Rerun requested for record %s in job %s", record_id, job_id)
     # Note: This is a simplified rerun
     # In production, you'd need the original file or image
     return {"success": True, "message": "Rerun queued"}

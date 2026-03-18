@@ -145,7 +145,7 @@ export function Dropzone({
           or click to browse (JPG, PNG, PDF, or ZIP)
         </p>
         <p className="mt-2 text-xs text-muted-foreground">
-          Max {maxFiles} files per batch
+          Max {maxFiles} files, {MAX_SINGLE_FILE_SIZE / 1024 / 1024}MB each
         </p>
       </div>
 

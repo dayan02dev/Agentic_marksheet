@@ -53,3 +53,13 @@ class TestZipSecurity:
             pass  # Empty ZIP
 
         assert validate_zip_safety(zip_path) is True
+
+    def test_zip_with_image_files(self, tmp_path):
+        """Test ZIP containing common marksheet file types."""
+        zip_path = tmp_path / "images.zip"
+        with zipfile.ZipFile(zip_path, 'w') as zf:
+            zf.writestr("marksheet1.jpg", "fake-image")
+            zf.writestr("marksheet2.png", "fake-image")
+            zf.writestr("result.pdf", "fake-pdf")
+
+        assert validate_zip_safety(zip_path) is True

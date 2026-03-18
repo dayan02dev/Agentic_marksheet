@@ -12,7 +12,7 @@ settings = get_settings()
 logger = logging.getLogger(__name__)
 
 
-def resize_image(image: Image.Image, max_dim: int = None) -> Image.Image:
+def resize_image(image: Image.Image, max_dim: Optional[int] = None) -> Image.Image:
     """Resize image while maintaining aspect ratio."""
     if max_dim is None:
         max_dim = settings.max_image_dimension

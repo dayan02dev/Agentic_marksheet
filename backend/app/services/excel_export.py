@@ -1,10 +1,13 @@
-"""Excel export service with formatting."""
+"""Excel export service with conditional formatting."""
 import io
+import logging
 from typing import List, Optional, Dict
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from app.models import MarksheetRecord, SubjectStatus
+
+logger = logging.getLogger(__name__)
 
 # Cell styles
 HEADER_FONT = Font(bold=True, size=11)
@@ -176,6 +179,8 @@ def create_excel(records: List[MarksheetRecord]) -> bytes:
                 # Highlight review columns
                 if col_idx in [32, 33]:  # Needs Review, Review Reasons columns
                     cell.fill = ERROR_FILL
+
+    logger.info("Excel export created with %d records", len(records))
 
     # Save to bytes
     output = io.BytesIO()

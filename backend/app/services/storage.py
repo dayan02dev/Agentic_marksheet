@@ -1,9 +1,9 @@
-"""Storage service for job state management."""
+"""Storage service for job state management with Redis and in-memory fallback."""
 import json
 import asyncio
 import logging
 from typing import Optional, Dict, List
-from datetime import datetime
+from datetime import datetime, timezone
 import redis.asyncio as redis
 from app.config import get_settings
 from app.models import Job, JobStatus, MarksheetRecord
@@ -49,7 +49,7 @@ class StorageService:
             id=job_id,
             status=JobStatus.queued,
             total_files=total_files,
-            created_at=datetime.utcnow().isoformat()
+            created_at=datetime.now(timezone.utc).isoformat()
         )
         await self.save_job(job)
         return job
@@ -96,7 +96,7 @@ class StorageService:
             job.failed_files = failed_files
 
         if status == JobStatus.completed and not job.completed_at:
-            job.completed_at = datetime.utcnow().isoformat()
+            job.completed_at = datetime.now(timezone.utc).isoformat()
 
         await self.save_job(job)
         return job

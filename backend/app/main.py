@@ -265,6 +265,7 @@ async def get_job(job_id: str):
         "completed_files": job.completed_files,
         "failed_files": job.failed_files,
         "records": [r.model_dump() for r in job.records],
+        "record_count": len(job.records),
         "created_at": job.created_at,
         "completed_at": job.completed_at,
         "error": job.error

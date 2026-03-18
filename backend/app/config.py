@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     # App
     app_env: str = "development"
     log_level: str = "info"
+    app_version: str = "1.0.0"
 
     # OpenAI Models
     openai_primary_model: str = "gpt-4o-2024-08-06"

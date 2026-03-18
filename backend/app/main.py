@@ -426,7 +426,7 @@ async def export_excel(job_id: str):
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "healthy", "version": "1.0.0"}
+    return {"status": "healthy", "version": settings.app_version}
 
 
 if __name__ == "__main__":

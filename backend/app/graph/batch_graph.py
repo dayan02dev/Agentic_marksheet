@@ -1,8 +1,11 @@
-"""LangGraph batch processing workflow definition."""
+"""LangGraph batch processing workflow definition with conditional repair routing."""
+import logging
 from typing import Literal
 from langgraph.graph import StateGraph, END
 from app.models import GraphState
 from app.graph.nodes import NODES
+
+logger = logging.getLogger(__name__)
 
 
 def should_repair(state: GraphState) -> Literal["repair", "normalize"]:
@@ -52,6 +55,7 @@ def create_batch_graph():
 
     # Compile graph
     app = workflow.compile()
+    logger.info("Batch processing graph compiled with %d nodes", len(NODES))
 
     return app
 

@@ -142,6 +142,13 @@ class StorageService:
         job = await self.get_job(job_id)
         return job.records if job else []
 
+    async def get_job_count(self) -> int:
+        """Get total number of stored jobs."""
+        if self._use_redis:
+            keys = await self._redis.keys("job:*")
+            return len(keys)
+        return len(self._memory)
+
     async def delete_job(self, job_id: str) -> bool:
         """Delete a job."""
         if self._use_redis:

@@ -163,7 +163,7 @@ def preprocess_image(image_bytes: bytes) -> bytes:
         return output.getvalue()
 
     except Exception as e:
-        # Fallback: return original if preprocessing fails
+        logger.warning("Image preprocessing failed, returning original: %s", e)
         return image_bytes
 
 

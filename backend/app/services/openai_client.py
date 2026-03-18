@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 MAX_RETRIES = 3
 RETRY_BASE_DELAY = 2.0  # seconds
+REQUEST_TIMEOUT = 90.0  # seconds
 
 
 # System prompt for CBSE marksheet extraction
@@ -154,7 +155,7 @@ class OpenAIExtractionService:
                         }
                     },
                     max_tokens=4096,
-                    timeout=90.0
+                    timeout=REQUEST_TIMEOUT
                 )
 
                 content = response.choices[0].message.content

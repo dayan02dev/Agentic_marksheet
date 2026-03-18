@@ -28,10 +28,12 @@ TEMP_DIR = Path("/tmp/marksheet_uploads")
 TEMP_DIR.mkdir(exist_ok=True)
 
 
+ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.pdf', '.zip'}
+
+
 def is_allowed_file(filename: str) -> bool:
     """Check if file type is allowed."""
-    allowed_exts = {'.jpg', '.jpeg', '.png', '.pdf', '.zip'}
-    return Path(filename).suffix.lower() in allowed_exts
+    return Path(filename).suffix.lower() in ALLOWED_EXTENSIONS
 
 
 def validate_zip_safety(zip_path: Path) -> bool:

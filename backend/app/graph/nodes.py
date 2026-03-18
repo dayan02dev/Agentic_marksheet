@@ -2,6 +2,7 @@
 import os
 import uuid
 import asyncio
+import logging
 import zipfile
 from typing import List, Dict, Any
 from pathlib import Path
@@ -19,6 +20,7 @@ from app.services.normalize import (
 from app.config import get_settings
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 # Temp directory for uploads
@@ -99,6 +101,7 @@ async def ingest_node(state: GraphState) -> GraphState:
                 'size': file_path.stat().st_size if file_path.exists() else 0
             })
 
+    logger.info("Ingest complete: %d files to process", len(files_to_process))
     state["images"] = files_to_process
     state["current_step"] = "canonicalize"
     state["progress"] = 10.0
@@ -138,6 +141,7 @@ async def canonicalize_node(state: GraphState) -> GraphState:
         except Exception as e:
             errors.append(f"Error canonicalizing {img_info['name']}: {str(e)}")
 
+    logger.info("Canonicalize complete: %d images ready", len(image_list))
     state["images"] = image_list
     state["current_step"] = "preprocess"
     state["progress"] = 20.0

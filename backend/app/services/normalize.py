@@ -3,8 +3,10 @@ import logging
 from typing import Optional, List, Dict
 from rapidfuzz import process, fuzz
 from app.models import SubjectNormalized, SubjectStatus, MarksheetRecord
+from app.config import get_settings
 
 logger = logging.getLogger(__name__)
+settings = get_settings()
 
 # Subject name mappings for fuzzy matching
 SUBJECT_MAPPINGS = {
@@ -124,7 +126,7 @@ def normalize_subject_name(raw_name: Optional[str]) -> tuple[str, str]:
         scorer=fuzz.WRatio
     )
 
-    if result and result[1] > 80:  # 80% similarity threshold
+    if result and result[1] > settings.fuzzy_match_threshold:
         matched_name = result[0]
         # Find canonical name
         for name, canonical in ALL_SUBJECT_NAMES:

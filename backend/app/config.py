@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     # Processing
     pdf_render_dpi: int = 400  # Higher DPI for better OCR
     max_image_dimension: int = 4096
+    fuzzy_match_threshold: int = 80  # Minimum similarity score for subject matching
 
     @property
     def allowed_origins_list(self) -> List[str]:

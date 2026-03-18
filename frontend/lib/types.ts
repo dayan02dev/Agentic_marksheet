@@ -32,7 +32,7 @@ export interface MarksheetRecord {
 
 export interface Job {
   job_id: string
-  status: "queued" | "processing" | "completed" | "error"
+  status: "queued" | "processing" | "completed" | "error" | "cancelled"
   progress: number
   total_files: number
   completed_files: number

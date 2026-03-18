@@ -35,6 +35,8 @@ export function getRecordStatusColor(status: string): string {
       return "bg-red-100 text-red-800"
     case "needs_review":
       return "bg-yellow-100 text-yellow-800"
+    case "pending":
+      return "bg-gray-100 text-gray-600"
     default:
       return "bg-gray-100 text-gray-800"
   }

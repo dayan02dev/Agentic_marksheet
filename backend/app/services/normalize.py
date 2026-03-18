@@ -1,7 +1,10 @@
 """Subject normalization and computation services."""
+import logging
 from typing import Optional, List, Dict
 from rapidfuzz import process, fuzz
 from app.models import SubjectNormalized, SubjectStatus, MarksheetRecord
+
+logger = logging.getLogger(__name__)
 
 # Subject name mappings for fuzzy matching
 SUBJECT_MAPPINGS = {

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Quick setup script for CBSE Marksheet Fetcher
 

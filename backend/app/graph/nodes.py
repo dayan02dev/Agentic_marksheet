@@ -243,6 +243,8 @@ async def extract_node(state: GraphState) -> GraphState:
         state["progress"] = min(batch_progress, progress_end)
         state["current_step"] = f"extract (batch {current_batch}/{(total_images + batch_size - 1) // batch_size})"
 
+    successful = sum(1 for e in all_extractions if e.get("success"))
+    logger.info("Extraction complete: %d/%d successful", successful, total_images)
     state["extractions"] = all_extractions
     state["current_step"] = "validate"
     state["progress"] = progress_end
@@ -368,6 +370,9 @@ async def normalize_node(state: GraphState) -> GraphState:
 
         records.append(record)
 
+    completed_count = sum(1 for r in records if r.status == "completed")
+    review_count = sum(1 for r in records if r.status == "needs_review")
+    logger.info("Normalize complete: %d completed, %d needs review", completed_count, review_count)
     state["records"] = records
     state["current_step"] = "compute"
     state["progress"] = 85.0

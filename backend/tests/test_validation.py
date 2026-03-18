@@ -170,3 +170,17 @@ class TestMarksheetRecord:
                 status=status
             )
             assert record.status == status
+
+    def test_record_default_values(self):
+        """Test record default field values."""
+        record = MarksheetRecord(
+            id="test-id",
+            filename="test.pdf"
+        )
+        assert record.status == "pending"
+        assert record.board == "CBSE"
+        assert record.needs_review is False
+        assert record.subjects == []
+        assert record.review_reasons == []
+        assert record.overall_percent is None
+        assert record.pcm_percent is None

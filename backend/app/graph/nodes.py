@@ -407,14 +407,17 @@ async def cleanup_node(state: GraphState) -> GraphState:
     Clean up temporary files.
     """
     # Clean up temp files
+    cleaned = 0
     for img in state["images"]:
         if 'path' in img:
             try:
                 path = Path(img['path'])
                 if path.exists() and path.is_relative_to(TEMP_DIR):
                     path.unlink()
+                    cleaned += 1
             except Exception:
                 pass
+    logger.info("Cleanup: removed %d temporary files", cleaned)
 
     # Clear image data from state to free memory
     for img in state["images"]:

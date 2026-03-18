@@ -173,7 +173,7 @@ def image_to_base64(image_bytes: bytes) -> str:
     return f"data:image/png;base64,{base64_str}"
 
 
-def pdf_to_image(pdf_bytes: bytes, dpi: int = None) -> bytes:
+def pdf_to_image(pdf_bytes: bytes, dpi: Optional[int] = None) -> bytes:
     """
     Convert first page of PDF to image at high DPI.
     Returns image bytes.

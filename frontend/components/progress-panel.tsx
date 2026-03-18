@@ -32,11 +32,13 @@ export function ProgressPanel({
       preprocess: "Enhancing images...",
       extract: "Extracting data with AI...",
       validate: "Validating results...",
-      repair: "Fixing issues...",
+      repair: "Fixing extraction issues...",
       normalize: "Normalizing subjects...",
       compute: "Computing percentages...",
-      checkpoint: "Finalizing...",
+      checkpoint: "Finalizing results...",
+      cleanup: "Cleaning up...",
       cleanup_complete: "Done!",
+      completed: "Processing complete!",
     }
     return stepLabels[step] || step
   }

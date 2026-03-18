@@ -103,8 +103,11 @@ async def create_job(
     if not files:
         raise HTTPException(status_code=400, detail="No files provided")
 
-    if len(files) > 20:
-        raise HTTPException(status_code=400, detail="Maximum 20 files per batch")
+    if len(files) > settings.max_files_per_batch:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Maximum {settings.max_files_per_batch} files per batch"
+        )
 
     # Read all files into memory and validate sizes
     file_data = []

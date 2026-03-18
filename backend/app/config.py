@@ -21,6 +21,7 @@ class Settings(BaseSettings):
 
     # Upload
     max_upload_size: int = 104857600  # 100MB
+    max_files_per_batch: int = 20  # Max files per batch upload
     concurrent_limit: int = 20  # Max concurrent OCR requests
     batch_size: int = 3  # Number of images to process in each batch
 

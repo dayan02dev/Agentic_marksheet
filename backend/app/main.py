@@ -437,7 +437,14 @@ async def export_excel(job_id: str):
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "healthy", "version": settings.app_version}
+    storage = await get_storage()
+    job_count = await storage.get_job_count()
+    return {
+        "status": "healthy",
+        "version": settings.app_version,
+        "environment": settings.app_env,
+        "active_jobs": job_count
+    }
 
 
 if __name__ == "__main__":

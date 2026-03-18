@@ -40,8 +40,8 @@ export function RecordsTable({ records, onEdit, onRerun }: RecordsTableProps) {
         <p className="text-lg font-medium text-muted-foreground">
           No records yet
         </p>
-        <p className="text-sm text-muted-foreground">
-          Upload marksheets to start extracting data
+        <p className="mt-1 text-sm text-muted-foreground">
+          Upload marksheets above to start extracting data
         </p>
       </div>
     )

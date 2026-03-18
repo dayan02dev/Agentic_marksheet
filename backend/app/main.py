@@ -359,8 +359,11 @@ async def update_record(job_id: str, record_id: str, updates: dict):
     if not record:
         raise HTTPException(status_code=404, detail="Record not found")
 
-    # Apply updates
+    # Prevent overwriting read-only fields
+    protected_fields = {"id", "filename"}
     for key, value in updates.items():
+        if key in protected_fields:
+            continue
         if hasattr(record, key):
             setattr(record, key, value)
 

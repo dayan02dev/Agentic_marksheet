@@ -70,6 +70,7 @@ export async function exportExcel(jobId: string): Promise<Blob> {
 
 const MAX_SSE_RETRIES = 5
 const SSE_RETRY_BASE_DELAY = 1000 // ms
+const SSE_MAX_DELAY = 30000 // ms - cap for exponential backoff
 const POLL_INTERVAL = 3000 // ms
 
 export class JobEventStream {
@@ -168,7 +169,7 @@ export class JobEventStream {
       }
 
       if (this.retryCount < MAX_SSE_RETRIES) {
-        const delay = SSE_RETRY_BASE_DELAY * Math.pow(2, this.retryCount)
+        const delay = Math.min(SSE_RETRY_BASE_DELAY * Math.pow(2, this.retryCount), SSE_MAX_DELAY)
         this.retryCount++
         console.log(`SSE connection lost, retrying in ${delay}ms (attempt ${this.retryCount}/${MAX_SSE_RETRIES})`)
         setTimeout(() => this.connectSSE(), delay)

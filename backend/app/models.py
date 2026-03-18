@@ -33,7 +33,7 @@ class ResultStatus(str, Enum):
 
 
 class SubjectExtract(BaseModel):
-    """Extracted subject data."""
+    """Raw extracted subject data from OpenAI Vision."""
     subject_name: Optional[str] = None
     obtained_marks: Optional[float] = None
     max_marks: Optional[float] = None

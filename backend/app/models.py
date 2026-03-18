@@ -100,11 +100,12 @@ class MarksheetRecord(BaseModel):
 
 
 class JobStatus(str, Enum):
-    """Batch job status."""
+    """Batch job lifecycle status."""
     queued = "queued"
     processing = "processing"
     completed = "completed"
     error = "error"
+    cancelled = "cancelled"
 
 
 class Job(BaseModel):

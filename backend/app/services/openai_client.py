@@ -226,11 +226,13 @@ class OpenAIExtractionService:
 
         # Must have student name
         if not data.get("student_name"):
+            logger.debug("Extraction validation failed: missing student_name")
             return False
 
         # Must have at least 1 subject
         subjects = data.get("subjects", [])
         if not subjects or len(subjects) < 1:
+            logger.debug("Extraction validation failed: no subjects found")
             return False
 
         return True

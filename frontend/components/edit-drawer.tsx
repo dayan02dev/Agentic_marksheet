@@ -299,7 +299,7 @@ export function EditDrawer({
           >
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button onClick={handleSave} disabled={isSaving} className="min-w-[120px]">
             {isSaving ? "Saving..." : "Save Changes"}
           </Button>
         </DialogFooter>

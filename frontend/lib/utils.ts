@@ -5,9 +5,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatPercent(value: number | null | undefined): string {
+export function formatPercent(value: number | null | undefined, decimals: number = 2): string {
   if (value === null || value === undefined) return "N/A"
-  return `${value.toFixed(2)}%`
+  return `${value.toFixed(decimals)}%`
 }
 
 export function getSubjectStatusColor(status: string): string {

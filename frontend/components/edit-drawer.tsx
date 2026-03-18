@@ -109,7 +109,9 @@ export function EditDrawer({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Record: {editingRecord.filename}</DialogTitle>
+          <DialogTitle className="truncate">
+            Edit Record: {editingRecord.filename}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 py-4">

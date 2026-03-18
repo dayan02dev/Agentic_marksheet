@@ -56,11 +56,15 @@ npm install
 
 cd ..
 
+echo ""
 echo "Setup complete!"
 echo ""
 echo "To start the application:"
 echo ""
-echo "1. Add your OPENAI_API_KEY to backend/.env"
-echo "2. Start backend: cd backend && source venv/bin/activate && uvicorn app.main:app --reload"
-echo "3. Start frontend: cd frontend && npm run dev"
-echo "4. Open http://localhost:3000"
+echo "  1. Add your OPENAI_API_KEY to backend/.env"
+echo "  2. Start backend:  cd backend && source venv/bin/activate && uvicorn app.main:app --reload"
+echo "  3. Start frontend: cd frontend && npm run dev"
+echo "  4. Open http://localhost:3000"
+echo ""
+echo "To run tests:"
+echo "  cd backend && source venv/bin/activate && pytest tests/ -v"
